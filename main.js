@@ -8,9 +8,9 @@ const monGlobe = Globe()
   .atmosphereColor('#a855f7')
   .atmosphereAltitude(0.18)
   .polygonCapColor(pays => pays === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
-  .polygonSideColor(() => 'rgba(168, 85, 247, 0.25)')
-  .polygonStrokeColor(() => '#c084fc')
-  .polygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.008)
+  .polygonSideColor(() => 'rgba(168, 85, 247, 0.12)')
+  .polygonStrokeColor(() => 'rgba(192, 132, 252, 0.7)')
+  .polygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.002)
   .polygonsTransitionDuration(300)
   .polygonLabel(pays => `<b>${nomAffiche(pays)}</b>`)
   .onPolygonClick((zone, evenement, coords) => {
@@ -33,7 +33,7 @@ monGlobe.controls().autoRotate = false;
 function rafraichirSurbrillance() {
   monGlobe
     .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
-    .polygonAltitude(p => p === paysSurvole ? 0.05 : 0.008);
+    .polygonAltitude(p => p === paysSurvole ? 0.05 : 0.002);
 }
 
 const traducteurPays = new Intl.DisplayNames(['fr'], { type: 'region' });

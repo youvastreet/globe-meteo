@@ -70,6 +70,29 @@ let vueDetaillee = false;
 const cacheDetails = {};
 const boutonRetour = document.getElementById('retour-monde');
 
+function aireSignee(anneau) {
+  let somme = 0;
+  for (let i = 0; i < anneau.length - 1; i++) {
+    somme += (anneau[i + 1][0] - anneau[i][0]) * (anneau[i + 1][1] + anneau[i][1]);
+  }
+  return somme;
+}
+
+function corrigerOrientation(zones) {
+  zones.forEach(zone => {
+    const geometrie = zone.geometry;
+    const polygones = geometrie.type === 'Polygon' ? [geometrie.coordinates] : geometrie.coordinates;
+    polygones.forEach(anneaux => {
+      anneaux.forEach((anneau, index) => {
+        const estExterieur = index === 0;
+        const estHoraire = aireSignee(anneau) > 0;
+        if (estExterieur !== estHoraire) anneau.reverse();
+      });
+    });
+  });
+  return zones;
+}
+
 function entrerDansPays(pays) {
   const code = pays.properties.ADM0_A3;
   const centre = centreDuPays(pays);
@@ -79,9 +102,7 @@ function entrerDansPays(pays) {
     vueDetaillee = true;
     paysSurvole = null;
     rafraichirSurbrillance();
-    monGlobe.polygonsTransitionDuration(0);
     monGlobe.polygonsData(zones);
-    setTimeout(() => monGlobe.polygonsTransitionDuration(300), 500);
     boutonRetour.classList.remove('cache');
     monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude }, 1200);
   };
@@ -106,8 +127,8 @@ function entrerDansPays(pays) {
 
   telechargement
     .then(donnees => {
-      cacheDetails[code] = donnees.features;
-      afficherZones(donnees.features);
+      cacheDetails[code] = corrigerOrientation(donnees.features);
+      afficherZones(cacheDetails[code]);
     })
     .catch(erreur => console.warn('Découpage indisponible :', erreur.message));
 }
@@ -116,9 +137,7 @@ function revenirAuMonde() {
   vueDetaillee = false;
   paysSurvole = null;
   rafraichirSurbrillance();
-  monGlobe.polygonsTransitionDuration(0);
   monGlobe.polygonsData(listePays);
-  setTimeout(() => monGlobe.polygonsTransitionDuration(300), 500);
   boutonRetour.classList.add('cache');
   monGlobe.pointOfView({ altitude: 2.5 }, 1200);
 }

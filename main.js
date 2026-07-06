@@ -6,17 +6,17 @@ const monGlobe = Globe()
   .showAtmosphere(true)
   .atmosphereColor('#a855f7')
   .atmosphereAltitude(0.18)
-  .hexPolygonResolution(3)
-  .hexPolygonMargin(0.4)
-  .hexPolygonColor(pays => pays === paysSurvole ? '#f0abfc' : '#a855f7')
-  .hexPolygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.001)
-  .hexPolygonsTransitionDuration(300)
-  .hexPolygonLabel(pays => `<b>${pays.properties.ADMIN}</b>`)
-  .onHexPolygonHover(pays => {
+  .polygonCapColor(pays => pays === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
+  .polygonSideColor(() => 'rgba(168, 85, 247, 0.25)')
+  .polygonStrokeColor(() => '#c084fc')
+  .polygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.008)
+  .polygonsTransitionDuration(300)
+  .polygonLabel(pays => `<b>${pays.properties.ADMIN}</b>`)
+  .onPolygonHover(pays => {
     paysSurvole = pays;
     monGlobe
-      .hexPolygonColor(p => p === paysSurvole ? '#f0abfc' : '#a855f7')
-      .hexPolygonAltitude(p => p === paysSurvole ? 0.05 : 0.001);
+      .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
+      .polygonAltitude(p => p === paysSurvole ? 0.05 : 0.008);
   });
 
 monGlobe(document.getElementById('globe'));
@@ -30,5 +30,5 @@ monGlobe.controls().autoRotate = false;
 fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
   .then(reponse => reponse.json())
   .then(donnees => {
-    monGlobe.hexPolygonsData(donnees.features);
+    monGlobe.polygonsData(donnees.features);
   });

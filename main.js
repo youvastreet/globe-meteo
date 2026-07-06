@@ -79,7 +79,9 @@ function entrerDansPays(pays) {
     vueDetaillee = true;
     paysSurvole = null;
     rafraichirSurbrillance();
+    monGlobe.polygonsTransitionDuration(0);
     monGlobe.polygonsData(zones);
+    setTimeout(() => monGlobe.polygonsTransitionDuration(300), 500);
     boutonRetour.classList.remove('cache');
     monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude }, 1200);
   };
@@ -114,7 +116,9 @@ function revenirAuMonde() {
   vueDetaillee = false;
   paysSurvole = null;
   rafraichirSurbrillance();
+  monGlobe.polygonsTransitionDuration(0);
   monGlobe.polygonsData(listePays);
+  setTimeout(() => monGlobe.polygonsTransitionDuration(300), 500);
   boutonRetour.classList.add('cache');
   monGlobe.pointOfView({ altitude: 2.5 }, 1200);
 }

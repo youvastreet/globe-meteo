@@ -1,0 +1,9 @@
+/* On supprime la marge par défaut du navigateur (8px autour du body)
+   pour que le globe occupe vraiment tout l'écran */
+body {
+  margin: 0;
+  /* On cache les barres de défilement : le globe fait exactement
+     la taille de la fenêtre, rien ne doit dépasser */
+  overflow: hidden;
+  background-color: #000011; /* bleu nuit, le temps que les textures chargent */
+}

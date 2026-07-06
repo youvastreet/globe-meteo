@@ -1,4 +1,5 @@
 let paysSurvole = null;
+let listePays = [];
 
 const monGlobe = Globe()
   .globeImageUrl(null)
@@ -11,13 +12,11 @@ const monGlobe = Globe()
   .polygonStrokeColor(() => '#c084fc')
   .polygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.008)
   .polygonsTransitionDuration(300)
-  .polygonLabel(pays => `<b>${pays.properties.ADMIN}</b>`)
+  .polygonLabel(pays => `<b>${nomAffiche(pays)}</b>`)
   .onPolygonClick((pays, evenement, coords) => afficherMeteo(pays, coords))
   .onPolygonHover(pays => {
     paysSurvole = pays;
-    monGlobe
-      .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
-      .polygonAltitude(p => p === paysSurvole ? 0.05 : 0.008);
+    rafraichirSurbrillance();
   });
 
 monGlobe(document.getElementById('globe'));
@@ -28,17 +27,43 @@ materiau.emissive.set('#13082a');
 
 monGlobe.controls().autoRotate = false;
 
+function rafraichirSurbrillance() {
+  monGlobe
+    .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
+    .polygonAltitude(p => p === paysSurvole ? 0.05 : 0.008);
+}
+
+const traducteurPays = new Intl.DisplayNames(['fr'], { type: 'region' });
+
+function traduireNomPays(pays) {
+  const code = [pays.properties.ISO_A2, pays.properties.WB_A2]
+    .find(c => typeof c === 'string' && /^[A-Z]{2}$/.test(c));
+  if (!code) return null;
+  try {
+    const nom = traducteurPays.of(code);
+    return nom === code ? null : nom;
+  } catch {
+    return null;
+  }
+}
+
+function nomAffiche(pays) {
+  return pays.nomFrancais || pays.properties.ADMIN;
+}
+
 fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
   .then(reponse => reponse.json())
   .then(donnees => {
-    monGlobe.polygonsData(donnees.features);
+    listePays = donnees.features;
+    listePays.forEach(pays => pays.nomFrancais = traduireNomPays(pays));
+    monGlobe.polygonsData(listePays);
   });
 
 const panneau = document.getElementById('panneau-meteo');
 
 function afficherMeteo(pays, coords) {
   panneau.classList.remove('cache');
-  panneau.innerHTML = `<h2>${pays.properties.ADMIN}</h2><p>Chargement…</p>`;
+  panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>Chargement…</p>`;
 
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&units=metric&lang=fr&appid=${CONFIG.meteoApiKey}`;
 
@@ -49,7 +74,7 @@ function afficherMeteo(pays, coords) {
     })
     .then(meteo => {
       panneau.innerHTML = `
-        <h2>${pays.properties.ADMIN}</h2>
+        <h2>${nomAffiche(pays)}</h2>
         <p class="lieu">${meteo.name || 'Zone cliquée'}</p>
         <div class="temperature">${Math.round(meteo.main.temp)}°C</div>
         <p class="description">
@@ -62,6 +87,85 @@ function afficherMeteo(pays, coords) {
       `;
     })
     .catch(erreur => {
-      panneau.innerHTML = `<h2>${pays.properties.ADMIN}</h2><p>Météo indisponible (${erreur.message})</p>`;
+      panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>Météo indisponible (${erreur.message})</p>`;
     });
 }
+
+const champRecherche = document.getElementById('recherche');
+const boiteSuggestions = document.getElementById('suggestions');
+
+function normaliser(texte) {
+  return texte.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function chercherPays(saisie) {
+  const requete = normaliser(saisie);
+  return listePays
+    .filter(pays =>
+      [pays.nomFrancais, pays.properties.ADMIN, pays.properties.NAME, pays.properties.NAME_LONG]
+        .filter(Boolean)
+        .some(nom => normaliser(nom).includes(requete))
+    )
+    .slice(0, 6);
+}
+
+function centreDuPays(pays) {
+  const geometrie = pays.geometry;
+  const polygones = geometrie.type === 'Polygon' ? [geometrie.coordinates] : geometrie.coordinates;
+  let meilleurContour = polygones[0][0];
+  let meilleureSurface = 0;
+
+  polygones.forEach(polygone => {
+    const contour = polygone[0];
+    const longitudes = contour.map(point => point[0]);
+    const latitudes = contour.map(point => point[1]);
+    const surface =
+      (Math.max(...longitudes) - Math.min(...longitudes)) *
+      (Math.max(...latitudes) - Math.min(...latitudes));
+    if (surface > meilleureSurface) {
+      meilleureSurface = surface;
+      meilleurContour = contour;
+    }
+  });
+
+  const longitudes = meilleurContour.map(point => point[0]);
+  const latitudes = meilleurContour.map(point => point[1]);
+  return {
+    lat: (Math.min(...latitudes) + Math.max(...latitudes)) / 2,
+    lng: (Math.min(...longitudes) + Math.max(...longitudes)) / 2
+  };
+}
+
+function selectionnerPays(pays) {
+  champRecherche.value = nomAffiche(pays);
+  boiteSuggestions.innerHTML = '';
+  const centre = centreDuPays(pays);
+  paysSurvole = pays;
+  rafraichirSurbrillance();
+  monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 1.6 }, 1500);
+  afficherMeteo(pays, centre);
+}
+
+champRecherche.addEventListener('input', () => {
+  boiteSuggestions.innerHTML = '';
+  const saisie = champRecherche.value.trim();
+  if (saisie.length < 2) return;
+
+  chercherPays(saisie).forEach(pays => {
+    const bouton = document.createElement('button');
+    bouton.textContent = nomAffiche(pays);
+    bouton.addEventListener('click', () => selectionnerPays(pays));
+    boiteSuggestions.appendChild(bouton);
+  });
+});
+
+champRecherche.addEventListener('keydown', evenement => {
+  if (evenement.key === 'Enter') {
+    const resultats = chercherPays(champRecherche.value.trim());
+    if (resultats.length > 0) selectionnerPays(resultats[0]);
+  }
+  if (evenement.key === 'Escape') {
+    boiteSuggestions.innerHTML = '';
+    champRecherche.blur();
+  }
+});

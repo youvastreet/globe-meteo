@@ -13,7 +13,10 @@ const monGlobe = Globe()
   .polygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.008)
   .polygonsTransitionDuration(300)
   .polygonLabel(pays => `<b>${nomAffiche(pays)}</b>`)
-  .onPolygonClick((pays, evenement, coords) => afficherMeteo(pays, coords))
+  .onPolygonClick((zone, evenement, coords) => {
+    afficherMeteo(zone, coords);
+    if (!vueDetaillee) entrerDansPays(zone);
+  })
   .onPolygonHover(pays => {
     paysSurvole = pays;
     rafraichirSurbrillance();
@@ -47,8 +50,8 @@ function traduireNomPays(pays) {
   }
 }
 
-function nomAffiche(pays) {
-  return pays.nomFrancais || pays.properties.ADMIN;
+function nomAffiche(zone) {
+  return zone.properties.nom || zone.nomFrancais || zone.properties.ADMIN;
 }
 
 fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
@@ -58,6 +61,56 @@ fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/data
     listePays.forEach(pays => pays.nomFrancais = traduireNomPays(pays));
     monGlobe.polygonsData(listePays);
   });
+
+const CARTES_DETAILLEES = {
+  FRA: 'https://cdn.jsdelivr.net/gh/gregoiredavid/france-geojson@master/departements-version-simplifiee.geojson'
+};
+
+let vueDetaillee = false;
+const cacheDetails = {};
+const boutonRetour = document.getElementById('retour-monde');
+
+function entrerDansPays(pays) {
+  const url = CARTES_DETAILLEES[pays.properties.ADM0_A3];
+  if (!url) return;
+
+  const afficherZones = zones => {
+    vueDetaillee = true;
+    paysSurvole = null;
+    rafraichirSurbrillance();
+    monGlobe.polygonsData(zones);
+    boutonRetour.classList.remove('cache');
+    const centre = centreDuPays(pays);
+    monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 0.5 }, 1200);
+  };
+
+  if (cacheDetails[url]) {
+    afficherZones(cacheDetails[url]);
+    return;
+  }
+
+  fetch(url)
+    .then(reponse => reponse.json())
+    .then(donnees => {
+      cacheDetails[url] = donnees.features;
+      afficherZones(donnees.features);
+    });
+}
+
+function revenirAuMonde() {
+  vueDetaillee = false;
+  paysSurvole = null;
+  rafraichirSurbrillance();
+  monGlobe.polygonsData(listePays);
+  boutonRetour.classList.add('cache');
+  monGlobe.pointOfView({ altitude: 2.5 }, 1200);
+}
+
+boutonRetour.addEventListener('click', revenirAuMonde);
+
+document.addEventListener('keydown', evenement => {
+  if (evenement.key === 'Escape' && vueDetaillee) revenirAuMonde();
+});
 
 const panneau = document.getElementById('panneau-meteo');
 
@@ -139,11 +192,16 @@ function centreDuPays(pays) {
 function selectionnerPays(pays) {
   champRecherche.value = nomAffiche(pays);
   boiteSuggestions.innerHTML = '';
+  if (vueDetaillee) revenirAuMonde();
   const centre = centreDuPays(pays);
   paysSurvole = pays;
   rafraichirSurbrillance();
-  monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 1.6 }, 1500);
   afficherMeteo(pays, centre);
+  if (CARTES_DETAILLEES[pays.properties.ADM0_A3]) {
+    entrerDansPays(pays);
+  } else {
+    monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 1.6 }, 1500);
+  }
 }
 
 champRecherche.addEventListener('input', () => {

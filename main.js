@@ -9,10 +9,14 @@ const monGlobe = Globe()
   .hexPolygonResolution(3)
   .hexPolygonMargin(0.4)
   .hexPolygonColor(pays => pays === paysSurvole ? '#f0abfc' : '#a855f7')
+  .hexPolygonAltitude(pays => pays === paysSurvole ? 0.05 : 0.001)
+  .hexPolygonsTransitionDuration(300)
   .hexPolygonLabel(pays => `<b>${pays.properties.ADMIN}</b>`)
   .onHexPolygonHover(pays => {
     paysSurvole = pays;
-    monGlobe.hexPolygonColor(p => p === paysSurvole ? '#f0abfc' : '#a855f7');
+    monGlobe
+      .hexPolygonColor(p => p === paysSurvole ? '#f0abfc' : '#a855f7')
+      .hexPolygonAltitude(p => p === paysSurvole ? 0.05 : 0.001);
   });
 
 monGlobe(document.getElementById('globe'));

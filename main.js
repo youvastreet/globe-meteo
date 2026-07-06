@@ -51,7 +51,7 @@ function traduireNomPays(pays) {
 }
 
 function nomAffiche(zone) {
-  return zone.properties.nom || zone.nomFrancais || zone.properties.ADMIN;
+  return zone.properties.nom || zone.properties.shapeName || zone.nomFrancais || zone.properties.ADMIN;
 }
 
 fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
@@ -71,8 +71,9 @@ const cacheDetails = {};
 const boutonRetour = document.getElementById('retour-monde');
 
 function entrerDansPays(pays) {
-  const url = CARTES_DETAILLEES[pays.properties.ADM0_A3];
-  if (!url) return;
+  const code = pays.properties.ADM0_A3;
+  const centre = centreDuPays(pays);
+  const altitude = Math.min(2.5, Math.max(0.4, centre.etendue / 35));
 
   const afficherZones = zones => {
     vueDetaillee = true;
@@ -80,21 +81,33 @@ function entrerDansPays(pays) {
     rafraichirSurbrillance();
     monGlobe.polygonsData(zones);
     boutonRetour.classList.remove('cache');
-    const centre = centreDuPays(pays);
-    monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 0.5 }, 1200);
+    monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude }, 1200);
   };
 
-  if (cacheDetails[url]) {
-    afficherZones(cacheDetails[url]);
+  if (cacheDetails[code]) {
+    afficherZones(cacheDetails[code]);
     return;
   }
 
-  fetch(url)
-    .then(reponse => reponse.json())
+  const telechargement = CARTES_DETAILLEES[code]
+    ? fetch(CARTES_DETAILLEES[code]).then(reponse => reponse.json())
+    : fetch(`https://www.geoboundaries.org/api/current/gbOpen/${code}/ADM1/`)
+        .then(reponse => {
+          if (!reponse.ok) throw new Error(`pas de découpage pour ${code}`);
+          return reponse.json();
+        })
+        .then(meta => fetch(meta.simplifiedGeometryGeoJSON.replace(
+          'https://github.com/wmgeolab/geoBoundaries/raw/',
+          'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/'
+        )))
+        .then(reponse => reponse.json());
+
+  telechargement
     .then(donnees => {
-      cacheDetails[url] = donnees.features;
+      cacheDetails[code] = donnees.features;
       afficherZones(donnees.features);
-    });
+    })
+    .catch(erreur => console.warn('Découpage indisponible :', erreur.message));
 }
 
 function revenirAuMonde() {
@@ -185,7 +198,11 @@ function centreDuPays(pays) {
   const latitudes = meilleurContour.map(point => point[1]);
   return {
     lat: (Math.min(...latitudes) + Math.max(...latitudes)) / 2,
-    lng: (Math.min(...longitudes) + Math.max(...longitudes)) / 2
+    lng: (Math.min(...longitudes) + Math.max(...longitudes)) / 2,
+    etendue: Math.max(
+      Math.max(...latitudes) - Math.min(...latitudes),
+      Math.max(...longitudes) - Math.min(...longitudes)
+    )
   };
 }
 
@@ -197,11 +214,8 @@ function selectionnerPays(pays) {
   paysSurvole = pays;
   rafraichirSurbrillance();
   afficherMeteo(pays, centre);
-  if (CARTES_DETAILLEES[pays.properties.ADM0_A3]) {
-    entrerDansPays(pays);
-  } else {
-    monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 1.6 }, 1500);
-  }
+  monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude: 1.6 }, 1500);
+  entrerDansPays(pays);
 }
 
 champRecherche.addEventListener('input', () => {

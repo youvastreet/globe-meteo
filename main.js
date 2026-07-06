@@ -1,21 +1,30 @@
-// ÉTAPE 1 : afficher un globe 3D qui tourne tout seul
-// La fonction Globe() vient de la librairie globe.gl chargée dans index.html
+let paysSurvole = null;
 
-// On configure le globe en chaînant les méthodes : chaque méthode
-// règle une option et renvoie le globe, ce qui permet d'enchaîner.
 const monGlobe = Globe()
-  // La texture "photo" de la Terre (image satellite de la NASA)
-  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-  // Le relief : cette image dit à la 3D où sont les montagnes
-  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-  // Le fond étoilé derrière le globe
-  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png');
+  .globeImageUrl(null)
+  .backgroundColor('#000005')
+  .showAtmosphere(true)
+  .atmosphereColor('#a855f7')
+  .atmosphereAltitude(0.18)
+  .hexPolygonResolution(3)
+  .hexPolygonMargin(0.4)
+  .hexPolygonColor(pays => pays === paysSurvole ? '#f0abfc' : '#a855f7')
+  .hexPolygonLabel(pays => `<b>${pays.properties.ADMIN}</b>`)
+  .onHexPolygonHover(pays => {
+    paysSurvole = pays;
+    monGlobe.hexPolygonColor(p => p === paysSurvole ? '#f0abfc' : '#a855f7');
+  });
 
-// On "monte" le globe dans la div #globe de notre page HTML.
-// C'est ici que globe.gl crée la scène Three.js (caméra, lumières, sphère...)
 monGlobe(document.getElementById('globe'));
 
-// controls() donne accès aux contrôles de la caméra (les mêmes
-// OrbitControls que dans ton projet de particules Three.js)
-monGlobe.controls().autoRotate = true;      // rotation automatique
-monGlobe.controls().autoRotateSpeed = 0.5;  // vitesse douce (défaut : 2.0)
+const materiau = monGlobe.globeMaterial();
+materiau.color.set('#0b0614');
+materiau.emissive.set('#13082a');
+
+monGlobe.controls().autoRotate = false;
+
+fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+  .then(reponse => reponse.json())
+  .then(donnees => {
+    monGlobe.hexPolygonsData(donnees.features);
+  });

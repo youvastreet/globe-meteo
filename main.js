@@ -66,6 +66,10 @@ materiau.emissive.set('#13082a');
 
 monGlobe.controls().autoRotate = false;
 
+window.addEventListener('resize', () => {
+  monGlobe.width(window.innerWidth).height(window.innerHeight);
+});
+
 function rafraichirSurbrillance() {
   monGlobe
     .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')

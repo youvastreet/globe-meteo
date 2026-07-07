@@ -192,3 +192,34 @@ body {
   font-weight: bold;
   text-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
 }
+
+#choix-langue {
+  position: fixed;
+  top: 20px;
+  left: 274px;
+  display: flex;
+  gap: 4px;
+}
+
+#choix-langue button {
+  padding: 10px 12px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 10px;
+  background: rgba(20, 8, 40, 0.75);
+  backdrop-filter: blur(8px);
+  color: #e9d5ff;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#choix-langue button:hover {
+  border-color: #f0abfc;
+}
+
+#choix-langue button.actif {
+  background: rgba(168, 85, 247, 0.35);
+  border-color: #a855f7;
+  color: #f3e8ff;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}

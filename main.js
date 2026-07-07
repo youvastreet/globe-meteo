@@ -2,6 +2,41 @@ let paysSurvole = null;
 let listePays = [];
 const temperatures = {};
 
+const TEXTES = {
+  fr: {
+    titrePage: 'Globe Météo 3D',
+    placeholderRecherche: 'Rechercher un pays…',
+    retourMonde: '← Retour au monde',
+    recordsChaleur: 'Records de chaleur',
+    analyse: (fait, total) => `Analyse : ${fait}/${total} pays`,
+    chargement: 'Chargement…',
+    zoneCliquee: 'Zone cliquée',
+    ressenti: 'Ressenti :',
+    humidite: 'Humidité :',
+    vent: 'Vent :',
+    meteoIndisponible: 'Météo indisponible'
+  },
+  en: {
+    titrePage: '3D Weather Globe',
+    placeholderRecherche: 'Search for a country…',
+    retourMonde: '← Back to world',
+    recordsChaleur: 'Heat records',
+    analyse: (fait, total) => `Scanning: ${fait}/${total} countries`,
+    chargement: 'Loading…',
+    zoneCliquee: 'Clicked area',
+    ressenti: 'Feels like:',
+    humidite: 'Humidity:',
+    vent: 'Wind:',
+    meteoIndisponible: 'Weather unavailable'
+  }
+};
+
+let langue = localStorage.getItem('langue') || 'fr';
+
+function t(cle) {
+  return TEXTES[langue][cle];
+}
+
 const monGlobe = Globe()
   .globeImageUrl(null)
   .backgroundColor('#000005')
@@ -37,7 +72,7 @@ function rafraichirSurbrillance() {
     .polygonAltitude(p => p === paysSurvole ? 0.015 : 0.006);
 }
 
-const traducteurPays = new Intl.DisplayNames(['fr'], { type: 'region' });
+let traducteurPays = new Intl.DisplayNames([langue], { type: 'region' });
 
 function traduireNomPays(pays) {
   const code = [pays.properties.ISO_A2, pays.properties.WB_A2]
@@ -52,14 +87,14 @@ function traduireNomPays(pays) {
 }
 
 function nomAffiche(zone) {
-  return zone.properties.shapeName || zone.nomFrancais || zone.properties.ADMIN;
+  return zone.properties.shapeName || zone.nomTraduit || zone.properties.ADMIN;
 }
 
 fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
   .then(reponse => reponse.json())
   .then(donnees => {
     listePays = donnees.features;
-    listePays.forEach(pays => pays.nomFrancais = traduireNomPays(pays));
+    listePays.forEach(pays => pays.nomTraduit = traduireNomPays(pays));
     monGlobe.polygonsData(listePays);
     chargerTemperatures();
   });
@@ -96,7 +131,8 @@ async function chargerTemperatures() {
   const enCache = lireCacheTemperatures();
   if (enCache) {
     Object.assign(temperatures, enCache);
-    rafraichirTableau(true);
+    analyseTerminee = true;
+    rafraichirTableau();
     return;
   }
 
@@ -115,20 +151,22 @@ async function chargerTemperatures() {
         temperatures[codePays(pays)] = meteo.main.temp;
       } catch {}
     }));
-    rafraichirTableau(false);
+    rafraichirTableau();
     if (debut + TAILLE_LOT < listePays.length) await attente(PAUSE_ENTRE_LOTS);
   }
 
   sauvegarderCacheTemperatures();
-  rafraichirTableau(true);
+  analyseTerminee = true;
+  rafraichirTableau();
 }
 
 const tableauChaleur = document.getElementById('tableau-chaleur');
 const progressionChaleur = document.getElementById('progression-chaleur');
 const listeChaleur = document.getElementById('liste-chaleur');
 const TAILLE_CLASSEMENT = 8;
+let analyseTerminee = false;
 
-function rafraichirTableau(termine) {
+function rafraichirTableau() {
   const classement = listePays
     .filter(pays => temperatures[codePays(pays)] !== undefined)
     .sort((a, b) => temperatures[codePays(b)] - temperatures[codePays(a)])
@@ -137,9 +175,9 @@ function rafraichirTableau(termine) {
   if (classement.length === 0) return;
 
   tableauChaleur.classList.remove('cache');
-  progressionChaleur.classList.toggle('cache', termine);
-  if (!termine) {
-    progressionChaleur.textContent = `Analyse : ${Object.keys(temperatures).length}/${listePays.length} pays`;
+  progressionChaleur.classList.toggle('cache', analyseTerminee);
+  if (!analyseTerminee) {
+    progressionChaleur.textContent = t('analyse')(Object.keys(temperatures).length, listePays.length);
   }
 
   listeChaleur.innerHTML = '';
@@ -242,9 +280,9 @@ const panneau = document.getElementById('panneau-meteo');
 
 function afficherMeteo(pays, coords) {
   panneau.classList.remove('cache');
-  panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>Chargement…</p>`;
+  panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('chargement')}</p>`;
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&units=metric&lang=fr&appid=${CONFIG.meteoApiKey}`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&units=metric&lang=${langue}&appid=${CONFIG.meteoApiKey}`;
 
   fetch(url)
     .then(reponse => {
@@ -254,19 +292,19 @@ function afficherMeteo(pays, coords) {
     .then(meteo => {
       panneau.innerHTML = `
         <h2>${nomAffiche(pays)}</h2>
-        <p class="lieu">${meteo.name || 'Zone cliquée'}</p>
+        <p class="lieu">${meteo.name || t('zoneCliquee')}</p>
         <div class="temperature">${Math.round(meteo.main.temp)}°C</div>
         <p class="description">
           <img src="https://openweathermap.org/img/wn/${meteo.weather[0].icon}@2x.png" alt="">
           ${meteo.weather[0].description}
         </p>
-        <p>Ressenti : ${Math.round(meteo.main.feels_like)}°C</p>
-        <p>Humidité : ${meteo.main.humidity}%</p>
-        <p>Vent : ${Math.round(meteo.wind.speed * 3.6)} km/h</p>
+        <p>${t('ressenti')} ${Math.round(meteo.main.feels_like)}°C</p>
+        <p>${t('humidite')} ${meteo.main.humidity}%</p>
+        <p>${t('vent')} ${Math.round(meteo.wind.speed * 3.6)} km/h</p>
       `;
     })
     .catch(erreur => {
-      panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>Météo indisponible (${erreur.message})</p>`;
+      panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('meteoIndisponible')} (${erreur.message})</p>`;
     });
 }
 
@@ -281,7 +319,7 @@ function chercherPays(saisie) {
   const requete = normaliser(saisie);
   return listePays
     .filter(pays =>
-      [pays.nomFrancais, pays.properties.ADMIN, pays.properties.NAME, pays.properties.NAME_LONG]
+      [pays.nomTraduit, pays.properties.ADMIN, pays.properties.NAME, pays.properties.NAME_LONG]
         .filter(Boolean)
         .some(nom => normaliser(nom).includes(requete))
     )
@@ -354,3 +392,30 @@ champRecherche.addEventListener('keydown', evenement => {
     champRecherche.blur();
   }
 });
+
+const boutonLangueFr = document.getElementById('langue-fr');
+const boutonLangueEn = document.getElementById('langue-en');
+
+function appliquerLangue() {
+  document.documentElement.lang = langue;
+  document.title = t('titrePage');
+  champRecherche.placeholder = t('placeholderRecherche');
+  boutonRetour.textContent = t('retourMonde');
+  document.getElementById('titre-chaleur').textContent = t('recordsChaleur');
+  boutonLangueFr.classList.toggle('actif', langue === 'fr');
+  boutonLangueEn.classList.toggle('actif', langue === 'en');
+}
+
+function changerLangue(nouvelleLangue) {
+  if (nouvelleLangue === langue) return;
+  langue = nouvelleLangue;
+  localStorage.setItem('langue', langue);
+  traducteurPays = new Intl.DisplayNames([langue], { type: 'region' });
+  listePays.forEach(pays => pays.nomTraduit = traduireNomPays(pays));
+  appliquerLangue();
+  rafraichirTableau();
+}
+
+boutonLangueFr.addEventListener('click', () => changerLangue('fr'));
+boutonLangueEn.addEventListener('click', () => changerLangue('en'));
+appliquerLangue();

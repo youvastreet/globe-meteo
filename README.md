@@ -42,6 +42,18 @@ Les GeoJSON de geoBoundaries enroulent leurs anneaux dans le sens inverse de cel
 ### Limite de l'API météo
 Le classement des records de chaleur interroge la météo de ~180 pays, mais le plan gratuit d'OpenWeatherMap plafonne à 60 appels/minute. Solution : chargement par **lots de 10 requêtes toutes les 12 secondes** avec mise à jour progressive du classement, et cache `localStorage` de 30 minutes pour rendre les rechargements instantanés.
 
+## 🎓 Démarche d'apprentissage
+
+Ce projet a été développé avec l'aide de **Claude Code** (l'assistant de programmation d'Anthropic), utilisé comme un mentor plutôt que comme un générateur de code : chaque morceau de code a été expliqué, questionné et compris avant d'être intégré — rien n'a été copié-collé aveuglément.
+
+Cette démarche m'a permis d'apprendre en pratiquant :
+
+- **l'intégration d'une API REST réelle** (OpenWeatherMap) avec ses contraintes de production : limite de débit, chargement par lots, mise en cache ;
+- **le débogage jusqu'à la cause racine** de problèmes 3D non triviaux — l'orientation des anneaux GeoJSON, le z-fighting — plutôt que le contournement au hasard ;
+- **les bonnes pratiques** : clé API tenue hors du dépôt, commits atomiques en anglais, internationalisation, responsive design.
+
+L'historique git reflète cette progression étape par étape : des fonctionnalités construites, affinées, et parfois retirées après réflexion.
+
 ## 🚀 Lancer le projet
 
 1. Cloner le dépôt :

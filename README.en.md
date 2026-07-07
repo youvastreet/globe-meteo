@@ -42,6 +42,18 @@ At very low altitude, the sphere mesh "pokes" through the country polygons: dark
 ### Weather API rate limit
 The heat-records leaderboard queries weather for ~180 countries, but OpenWeatherMap's free plan caps at 60 calls/minute. Solution: **batches of 10 requests every 12 seconds** with progressive leaderboard updates, plus a 30-minute `localStorage` cache making reloads instant.
 
+## 🎓 Learning approach
+
+This project was built with the help of **Claude Code** (Anthropic's coding assistant), used as a mentor rather than a code generator: every piece of code was explained, questioned and understood before being integrated — nothing was blindly copy-pasted.
+
+This approach let me learn by doing:
+
+- **integrating a real REST API** (OpenWeatherMap) with its production constraints: rate limiting, batched loading, caching;
+- **debugging non-trivial 3D issues down to their root cause** — GeoJSON ring winding, z-fighting — instead of guessing at workarounds;
+- **good practices**: API key kept out of the repository, atomic commits in English, internationalization, responsive design.
+
+The git history reflects this step-by-step progression: features built, refined, and sometimes removed after reflection.
+
 ## 🚀 Run the project
 
 1. Clone the repository:

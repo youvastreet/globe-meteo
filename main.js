@@ -1,6 +1,7 @@
 let paysSurvole = null;
 let listePays = [];
 const temperatures = {};
+const cleApi = typeof CONFIG !== 'undefined' ? CONFIG.meteoApiKey : null;
 
 const TEXTES = {
   fr: {
@@ -14,7 +15,8 @@ const TEXTES = {
     ressenti: 'Ressenti :',
     humidite: 'Humidité :',
     vent: 'Vent :',
-    meteoIndisponible: 'Météo indisponible'
+    meteoIndisponible: 'Météo indisponible',
+    meteoDemo: 'Météo désactivée dans la démo en ligne — la clé API n’est pas exposée publiquement.'
   },
   en: {
     titrePage: '3D Weather Globe',
@@ -27,7 +29,8 @@ const TEXTES = {
     ressenti: 'Feels like:',
     humidite: 'Humidity:',
     vent: 'Wind:',
-    meteoIndisponible: 'Weather unavailable'
+    meteoIndisponible: 'Weather unavailable',
+    meteoDemo: 'Weather is disabled in the online demo — the API key is not publicly exposed.'
   }
 };
 
@@ -140,6 +143,7 @@ function codePays(pays) {
 }
 
 async function chargerTemperatures() {
+  if (!cleApi) return;
   const enCache = lireCacheTemperatures();
   if (enCache) {
     Object.assign(temperatures, enCache);
@@ -155,7 +159,7 @@ async function chargerTemperatures() {
     const lot = listePays.slice(debut, debut + TAILLE_LOT);
     await Promise.all(lot.map(async pays => {
       const centre = centreDuPays(pays);
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${centre.lat}&lon=${centre.lng}&units=metric&appid=${CONFIG.meteoApiKey}`;
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${centre.lat}&lon=${centre.lng}&units=metric&appid=${cleApi}`;
       try {
         const reponse = await fetch(url);
         if (!reponse.ok) return;
@@ -297,9 +301,15 @@ document.getElementById('fermer-meteo').addEventListener('click', () => {
 
 function afficherMeteo(pays, coords) {
   panneau.classList.remove('cache');
+
+  if (!cleApi) {
+    contenuMeteo.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('meteoDemo')}</p>`;
+    return;
+  }
+
   contenuMeteo.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('chargement')}</p>`;
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&units=metric&lang=${langue}&appid=${CONFIG.meteoApiKey}`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&units=metric&lang=${langue}&appid=${cleApi}`;
 
   fetch(url)
     .then(reponse => {

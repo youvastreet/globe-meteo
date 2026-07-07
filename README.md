@@ -4,7 +4,11 @@
 
 Globe terrestre 3D interactif au style néon : cliquez sur un pays pour voir sa météo en temps réel, explorez ses régions, et suivez le classement mondial des records de chaleur en direct.
 
-![Démo du globe](docs/demo.gif)
+**[▶️ Essayer la démo en ligne](https://youvastreet.github.io/globe-meteo/)**
+
+[![Aperçu du globe](docs/apercu.png)](https://youvastreet.github.io/globe-meteo/)
+
+> La démo en ligne tourne sans clé API : la météo en direct y est désactivée. Pour l'expérience complète, voir la section « Lancer le projet ».
 
 ## Fonctionnalités
 

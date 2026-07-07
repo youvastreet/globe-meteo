@@ -4,7 +4,11 @@
 
 Interactive neon-styled 3D globe: click any country to see its live weather, explore its regions, and watch the world heat-records leaderboard update in real time.
 
-![Globe demo](docs/demo.gif)
+**[▶️ Try the live demo](https://youvastreet.github.io/globe-meteo/)**
+
+[![Globe preview](docs/apercu.png)](https://youvastreet.github.io/globe-meteo/)
+
+> The live demo runs without an API key: real-time weather is disabled there. For the full experience, see the "Run the project" section.
 
 ## ✨ Features
 

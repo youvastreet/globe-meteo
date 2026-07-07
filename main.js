@@ -1,5 +1,6 @@
 let paysSurvole = null;
 let listePays = [];
+const temperatures = {};
 
 const monGlobe = Globe()
   .globeImageUrl(null)
@@ -7,12 +8,12 @@ const monGlobe = Globe()
   .showAtmosphere(true)
   .atmosphereColor('#a855f7')
   .atmosphereAltitude(0.18)
-  .polygonCapColor(pays => pays === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
-  .polygonSideColor(() => 'rgba(168, 85, 247, 0.12)')
+  .polygonCapColor(pays => couleurCap(pays))
+  .polygonSideColor(pays => couleurFlanc(pays))
   .polygonStrokeColor(() => 'rgba(192, 132, 252, 0.7)')
-  .polygonAltitude(pays => pays === paysSurvole ? 0.015 : 0.002)
+  .polygonAltitude(pays => pays === paysSurvole ? 0.006 : 0.002)
   .polygonsTransitionDuration(300)
-  .polygonLabel(pays => `<b>${nomAffiche(pays)}</b>`)
+  .polygonLabel(pays => etiquettePays(pays))
   .onPolygonClick((zone, evenement, coords) => {
     afficherMeteo(zone, coords);
     if (!vueDetaillee) entrerDansPays(zone);
@@ -32,8 +33,50 @@ monGlobe.controls().autoRotate = false;
 
 function rafraichirSurbrillance() {
   monGlobe
-    .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
+    .polygonCapColor(p => couleurCap(p))
+    .polygonSideColor(p => couleurFlanc(p))
     .polygonAltitude(p => p === paysSurvole ? 0.015 : 0.002);
+}
+
+const VIOLET_NEON = [168, 85, 247];
+const ROUGE_FONCE = [185, 28, 28];
+
+function codePays(zone) {
+  return zone.properties.ADM0_A3;
+}
+
+function facteurChaleur(zone) {
+  const temp = temperatures[codePays(zone)];
+  if (temp === undefined) return 0;
+  return Math.min(1, Math.max(0, temp / 35));
+}
+
+function melanger(depart, arrivee, facteur) {
+  return Math.round(depart + (arrivee - depart) * facteur);
+}
+
+function teinteDuPays(zone) {
+  const facteur = facteurChaleur(zone);
+  return VIOLET_NEON.map((canal, i) => melanger(canal, ROUGE_FONCE[i], facteur));
+}
+
+function couleurCap(zone) {
+  const [r, g, b] = teinteDuPays(zone);
+  if (zone === paysSurvole) {
+    return `rgba(${melanger(r, 255, 0.4)}, ${melanger(g, 255, 0.4)}, ${melanger(b, 255, 0.4)}, 0.45)`;
+  }
+  return `rgba(${r}, ${g}, ${b}, ${0.15 + 0.3 * facteurChaleur(zone)})`;
+}
+
+function couleurFlanc(zone) {
+  const [r, g, b] = teinteDuPays(zone);
+  return `rgba(${r}, ${g}, ${b}, 0.12)`;
+}
+
+function etiquettePays(zone) {
+  const temp = temperatures[codePays(zone)];
+  const ligneTemp = temp === undefined ? '' : `<br>${Math.round(temp)} °C`;
+  return `<b>${nomAffiche(zone)}</b>${ligneTemp}`;
 }
 
 const traducteurPays = new Intl.DisplayNames(['fr'], { type: 'region' });
@@ -60,7 +103,62 @@ fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/data
     listePays = donnees.features;
     listePays.forEach(pays => pays.nomFrancais = traduireNomPays(pays));
     monGlobe.polygonsData(listePays);
+    chargerTemperatures();
   });
+
+const CLE_CACHE_TEMPERATURES = 'temperatures-pays';
+const VALIDITE_CACHE = 30 * 60 * 1000;
+
+function lireCacheTemperatures() {
+  try {
+    const brut = localStorage.getItem(CLE_CACHE_TEMPERATURES);
+    if (!brut) return null;
+    const { horodatage, valeurs } = JSON.parse(brut);
+    if (Date.now() - horodatage > VALIDITE_CACHE) return null;
+    return valeurs;
+  } catch {
+    return null;
+  }
+}
+
+function sauvegarderCacheTemperatures() {
+  localStorage.setItem(CLE_CACHE_TEMPERATURES, JSON.stringify({
+    horodatage: Date.now(),
+    valeurs: temperatures
+  }));
+}
+
+const attente = duree => new Promise(resolve => setTimeout(resolve, duree));
+
+async function chargerTemperatures() {
+  const enCache = lireCacheTemperatures();
+  if (enCache) {
+    Object.assign(temperatures, enCache);
+    rafraichirSurbrillance();
+    return;
+  }
+
+  const TAILLE_LOT = 10;
+  const PAUSE_ENTRE_LOTS = 12000;
+
+  for (let debut = 0; debut < listePays.length; debut += TAILLE_LOT) {
+    const lot = listePays.slice(debut, debut + TAILLE_LOT);
+    await Promise.all(lot.map(async pays => {
+      const centre = centreDuPays(pays);
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${centre.lat}&lon=${centre.lng}&units=metric&appid=${CONFIG.meteoApiKey}`;
+      try {
+        const reponse = await fetch(url);
+        if (!reponse.ok) return;
+        const meteo = await reponse.json();
+        temperatures[codePays(pays)] = meteo.main.temp;
+      } catch {}
+    }));
+    rafraichirSurbrillance();
+    if (debut + TAILLE_LOT < listePays.length) await attente(PAUSE_ENTRE_LOTS);
+  }
+
+  sauvegarderCacheTemperatures();
+}
 
 const CARTES_DETAILLEES = {
   FRA: 'https://cdn.jsdelivr.net/gh/gregoiredavid/france-geojson@master/departements-version-simplifiee.geojson'

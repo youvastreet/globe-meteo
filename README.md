@@ -6,7 +6,7 @@ Globe terrestre 3D interactif au style néon : cliquez sur un pays pour voir sa 
 
 **[▶️ Essayer la démo en ligne](https://youvastreet.github.io/globe-meteo/)**
 
-[![Aperçu du globe](docs/apercu.png)](https://youvastreet.github.io/globe-meteo/)
+[![Aperçu du globe](docs/globe-meteo.png)](https://youvastreet.github.io/globe-meteo/)
 
 > La démo en ligne tourne sans clé API : la météo en direct y est désactivée. Pour l'expérience complète, voir la section « Lancer le projet ».
 

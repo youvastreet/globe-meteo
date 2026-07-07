@@ -223,3 +223,35 @@ body {
   color: #f3e8ff;
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
 }
+
+@media (max-width: 640px) {
+  #zone-recherche {
+    width: calc(100vw - 132px);
+  }
+
+  #choix-langue {
+    left: auto;
+    right: 20px;
+  }
+
+  #panneau-meteo {
+    top: 72px;
+    left: 20px;
+    right: 20px;
+    width: auto;
+  }
+
+  #tableau-chaleur {
+    width: 170px;
+    padding: 12px 14px;
+  }
+
+  #tableau-chaleur h3 {
+    font-size: 13px;
+  }
+
+  #liste-chaleur button {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+}

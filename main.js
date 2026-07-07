@@ -44,9 +44,9 @@ const monGlobe = Globe()
   .atmosphereColor('#a855f7')
   .atmosphereAltitude(0.18)
   .polygonCapColor(pays => pays === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
-  .polygonSideColor(() => 'rgba(168, 85, 247, 0.12)')
-  .polygonStrokeColor(() => 'rgba(192, 132, 252, 0.7)')
-  .polygonAltitude(pays => pays === paysSurvole ? 0.015 : 0.006)
+  .polygonSideColor(() => vueDetaillee ? 'rgba(168, 85, 247, 0.06)' : 'rgba(168, 85, 247, 0.12)')
+  .polygonStrokeColor(() => vueDetaillee ? 'rgba(192, 132, 252, 0.45)' : 'rgba(192, 132, 252, 0.7)')
+  .polygonAltitude(pays => altitudePolygone(pays))
   .polygonsTransitionDuration(300)
   .polygonLabel(pays => `<b>${nomAffiche(pays)}</b>`)
   .onPolygonClick((zone, evenement, coords) => {
@@ -69,7 +69,14 @@ monGlobe.controls().autoRotate = false;
 function rafraichirSurbrillance() {
   monGlobe
     .polygonCapColor(p => p === paysSurvole ? 'rgba(240, 171, 252, 0.4)' : 'rgba(168, 85, 247, 0.15)')
-    .polygonAltitude(p => p === paysSurvole ? 0.015 : 0.006);
+    .polygonSideColor(() => vueDetaillee ? 'rgba(168, 85, 247, 0.06)' : 'rgba(168, 85, 247, 0.12)')
+    .polygonStrokeColor(() => vueDetaillee ? 'rgba(192, 132, 252, 0.45)' : 'rgba(192, 132, 252, 0.7)')
+    .polygonAltitude(p => altitudePolygone(p));
+}
+
+function altitudePolygone(zone) {
+  if (zone === paysSurvole) return vueDetaillee ? 0.008 : 0.015;
+  return vueDetaillee ? 0.002 : 0.006;
 }
 
 let traducteurPays = new Intl.DisplayNames([langue], { type: 'region' });

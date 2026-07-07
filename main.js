@@ -11,7 +11,7 @@ const monGlobe = Globe()
   .polygonCapColor(pays => couleurCap(pays))
   .polygonSideColor(pays => couleurFlanc(pays))
   .polygonStrokeColor(() => 'rgba(192, 132, 252, 0.7)')
-  .polygonAltitude(pays => pays === paysSurvole ? 0.006 : 0.002)
+  .polygonAltitude(pays => pays === paysSurvole ? 0.015 : 0.006)
   .polygonsTransitionDuration(300)
   .polygonLabel(pays => etiquettePays(pays))
   .onPolygonClick((zone, evenement, coords) => {
@@ -35,7 +35,7 @@ function rafraichirSurbrillance() {
   monGlobe
     .polygonCapColor(p => couleurCap(p))
     .polygonSideColor(p => couleurFlanc(p))
-    .polygonAltitude(p => p === paysSurvole ? 0.015 : 0.002);
+    .polygonAltitude(p => p === paysSurvole ? 0.015 : 0.006);
 }
 
 const VIOLET_NEON = [168, 85, 247];

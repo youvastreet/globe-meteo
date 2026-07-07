@@ -40,6 +40,7 @@ function t(cle) {
 const monGlobe = Globe()
   .globeImageUrl(null)
   .backgroundColor('#000005')
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
   .showAtmosphere(true)
   .atmosphereColor('#a855f7')
   .atmosphereAltitude(0.18)

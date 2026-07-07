@@ -258,9 +258,12 @@ body {
   #panneau-meteo {
     top: 72px;
     left: 20px;
-    right: 20px;
-    width: auto;
-    padding: 14px 16px;
+    right: auto;
+    width: calc(50vw - 26px);
+    box-sizing: border-box;
+    padding: 12px 14px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
   }
 
   .temperature {
@@ -268,8 +271,14 @@ body {
   }
 
   #tableau-chaleur {
-    width: 170px;
+    top: 72px;
+    bottom: auto;
+    right: 20px;
+    width: calc(50vw - 26px);
+    box-sizing: border-box;
     padding: 12px 14px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
   }
 
   #tableau-chaleur h3 {

@@ -289,10 +289,15 @@ document.addEventListener('keydown', evenement => {
 });
 
 const panneau = document.getElementById('panneau-meteo');
+const contenuMeteo = document.getElementById('contenu-meteo');
+
+document.getElementById('fermer-meteo').addEventListener('click', () => {
+  panneau.classList.add('cache');
+});
 
 function afficherMeteo(pays, coords) {
   panneau.classList.remove('cache');
-  panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('chargement')}</p>`;
+  contenuMeteo.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('chargement')}</p>`;
 
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lng}&units=metric&lang=${langue}&appid=${CONFIG.meteoApiKey}`;
 
@@ -302,7 +307,7 @@ function afficherMeteo(pays, coords) {
       return reponse.json();
     })
     .then(meteo => {
-      panneau.innerHTML = `
+      contenuMeteo.innerHTML = `
         <h2>${nomAffiche(pays)}</h2>
         <p class="lieu">${meteo.name || t('zoneCliquee')}</p>
         <div class="temperature">${Math.round(meteo.main.temp)}°C</div>
@@ -316,7 +321,7 @@ function afficherMeteo(pays, coords) {
       `;
     })
     .catch(erreur => {
-      panneau.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('meteoIndisponible')} (${erreur.message})</p>`;
+      contenuMeteo.innerHTML = `<h2>${nomAffiche(pays)}</h2><p>${t('meteoIndisponible')} (${erreur.message})</p>`;
     });
 }
 

@@ -10,6 +10,7 @@ body {
   top: 20px;
   left: 20px;
   width: 240px;
+  z-index: 20;
 }
 
 #recherche {
@@ -93,10 +94,30 @@ body {
   backdrop-filter: blur(8px);
   box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
   color: #f3e8ff;
+  z-index: 10;
 }
 
 #panneau-meteo.cache {
   display: none;
+}
+
+#fermer-meteo {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 4px;
+  border: none;
+  background: none;
+  color: #d8b4fe;
+  font-size: 16px;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#fermer-meteo:hover {
+  color: #f0abfc;
+  text-shadow: 0 0 8px rgba(240, 171, 252, 0.8);
 }
 
 #panneau-meteo h2 {
@@ -239,6 +260,11 @@ body {
     left: 20px;
     right: 20px;
     width: auto;
+    padding: 14px 16px;
+  }
+
+  .temperature {
+    font-size: 32px;
   }
 
   #tableau-chaleur {

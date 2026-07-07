@@ -45,8 +45,13 @@ function codePays(zone) {
   return zone.properties.ADM0_A3;
 }
 
+function temperatureDeZone(zone) {
+  if (zone.temperature !== undefined) return zone.temperature;
+  return temperatures[codePays(zone) || zone.codeParent];
+}
+
 function facteurChaleur(zone) {
-  const temp = temperatures[codePays(zone)];
+  const temp = temperatureDeZone(zone);
   if (temp === undefined) return 0;
   return Math.min(1, Math.max(0, temp / 35));
 }
@@ -74,7 +79,7 @@ function couleurFlanc(zone) {
 }
 
 function etiquettePays(zone) {
-  const temp = temperatures[codePays(zone)];
+  const temp = temperatureDeZone(zone);
   const ligneTemp = temp === undefined ? '' : `<br>${Math.round(temp)} °C`;
   return `<b>${nomAffiche(zone)}</b>${ligneTemp}`;
 }
@@ -138,26 +143,38 @@ async function chargerTemperatures() {
     return;
   }
 
+  await chargerLotsDeTemperatures(listePays, (pays, temp) => {
+    temperatures[codePays(pays)] = temp;
+  });
+  sauvegarderCacheTemperatures();
+}
+
+function chargerTemperaturesZones(zones) {
+  const manquantes = zones.filter(zone => zone.temperature === undefined);
+  if (manquantes.length > 0) {
+    chargerLotsDeTemperatures(manquantes, (zone, temp) => zone.temperature = temp);
+  }
+}
+
+async function chargerLotsDeTemperatures(zones, enregistrer) {
   const TAILLE_LOT = 10;
   const PAUSE_ENTRE_LOTS = 12000;
 
-  for (let debut = 0; debut < listePays.length; debut += TAILLE_LOT) {
-    const lot = listePays.slice(debut, debut + TAILLE_LOT);
-    await Promise.all(lot.map(async pays => {
-      const centre = centreDuPays(pays);
+  for (let debut = 0; debut < zones.length; debut += TAILLE_LOT) {
+    const lot = zones.slice(debut, debut + TAILLE_LOT);
+    await Promise.all(lot.map(async zone => {
+      const centre = centreDuPays(zone);
       const url = `https://api.openweathermap.org/data/2.5/weather?lat=${centre.lat}&lon=${centre.lng}&units=metric&appid=${CONFIG.meteoApiKey}`;
       try {
         const reponse = await fetch(url);
         if (!reponse.ok) return;
         const meteo = await reponse.json();
-        temperatures[codePays(pays)] = meteo.main.temp;
+        enregistrer(zone, meteo.main.temp);
       } catch {}
     }));
     rafraichirSurbrillance();
-    if (debut + TAILLE_LOT < listePays.length) await attente(PAUSE_ENTRE_LOTS);
+    if (debut + TAILLE_LOT < zones.length) await attente(PAUSE_ENTRE_LOTS);
   }
-
-  sauvegarderCacheTemperatures();
 }
 
 let vueDetaillee = false;
@@ -199,6 +216,7 @@ function entrerDansPays(pays) {
     monGlobe.polygonsData(zones);
     boutonRetour.classList.remove('cache');
     monGlobe.pointOfView({ lat: centre.lat, lng: centre.lng, altitude }, 1200);
+    chargerTemperaturesZones(zones);
   };
 
   if (cacheDetails[code]) {
@@ -220,6 +238,7 @@ function entrerDansPays(pays) {
   telechargement
     .then(donnees => {
       cacheDetails[code] = corrigerOrientation(donnees.features);
+      cacheDetails[code].forEach(zone => zone.codeParent = code);
       afficherZones(cacheDetails[code]);
     })
     .catch(erreur => console.warn('Découpage indisponible :', erreur.message));

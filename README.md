@@ -6,7 +6,7 @@ Globe terrestre 3D interactif au style néon : cliquez sur un pays pour voir sa 
 
 ![Démo du globe](docs/demo.gif)
 
-## ✨ Fonctionnalités
+## Fonctionnalités
 
 - **Globe 3D néon** — pays en polygones translucides violets, halo atmosphérique, surbrillance animée au survol
 - **Météo en temps réel** — clic sur un pays : température, ressenti, humidité, vent et description (OpenWeatherMap)

@@ -94,7 +94,7 @@ function traduireNomPays(pays) {
 }
 
 function nomAffiche(zone) {
-  return zone.properties.nom || zone.properties.shapeName || zone.nomFrancais || zone.properties.ADMIN;
+  return zone.properties.shapeName || zone.nomFrancais || zone.properties.ADMIN;
 }
 
 fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
@@ -160,10 +160,6 @@ async function chargerTemperatures() {
   sauvegarderCacheTemperatures();
 }
 
-const CARTES_DETAILLEES = {
-  FRA: 'https://cdn.jsdelivr.net/gh/gregoiredavid/france-geojson@master/departements-version-simplifiee.geojson'
-};
-
 let vueDetaillee = false;
 const cacheDetails = {};
 const boutonRetour = document.getElementById('retour-monde');
@@ -210,18 +206,16 @@ function entrerDansPays(pays) {
     return;
   }
 
-  const telechargement = CARTES_DETAILLEES[code]
-    ? fetch(CARTES_DETAILLEES[code]).then(reponse => reponse.json())
-    : fetch(`https://www.geoboundaries.org/api/current/gbOpen/${code}/ADM1/`)
-        .then(reponse => {
-          if (!reponse.ok) throw new Error(`pas de découpage pour ${code}`);
-          return reponse.json();
-        })
-        .then(meta => fetch(meta.simplifiedGeometryGeoJSON.replace(
-          'https://github.com/wmgeolab/geoBoundaries/raw/',
-          'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/'
-        )))
-        .then(reponse => reponse.json());
+  const telechargement = fetch(`https://www.geoboundaries.org/api/current/gbOpen/${code}/ADM1/`)
+    .then(reponse => {
+      if (!reponse.ok) throw new Error(`pas de découpage pour ${code}`);
+      return reponse.json();
+    })
+    .then(meta => fetch(meta.simplifiedGeometryGeoJSON.replace(
+      'https://github.com/wmgeolab/geoBoundaries/raw/',
+      'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/'
+    )))
+    .then(reponse => reponse.json());
 
   telechargement
     .then(donnees => {

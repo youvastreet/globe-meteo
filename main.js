@@ -1,5 +1,6 @@
 let paysSurvole = null;
 let listePays = [];
+const temperatures = {};
 
 const monGlobe = Globe()
   .globeImageUrl(null)
@@ -60,7 +61,102 @@ fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/data
     listePays = donnees.features;
     listePays.forEach(pays => pays.nomFrancais = traduireNomPays(pays));
     monGlobe.polygonsData(listePays);
+    chargerTemperatures();
   });
+
+const CLE_CACHE_TEMPERATURES = 'temperatures-pays';
+const VALIDITE_CACHE = 30 * 60 * 1000;
+
+function lireCacheTemperatures() {
+  try {
+    const brut = localStorage.getItem(CLE_CACHE_TEMPERATURES);
+    if (!brut) return null;
+    const { horodatage, valeurs } = JSON.parse(brut);
+    if (Date.now() - horodatage > VALIDITE_CACHE) return null;
+    return valeurs;
+  } catch {
+    return null;
+  }
+}
+
+function sauvegarderCacheTemperatures() {
+  localStorage.setItem(CLE_CACHE_TEMPERATURES, JSON.stringify({
+    horodatage: Date.now(),
+    valeurs: temperatures
+  }));
+}
+
+const attente = duree => new Promise(resolve => setTimeout(resolve, duree));
+
+function codePays(pays) {
+  return pays.properties.ADM0_A3;
+}
+
+async function chargerTemperatures() {
+  const enCache = lireCacheTemperatures();
+  if (enCache) {
+    Object.assign(temperatures, enCache);
+    rafraichirTableau(true);
+    return;
+  }
+
+  const TAILLE_LOT = 10;
+  const PAUSE_ENTRE_LOTS = 12000;
+
+  for (let debut = 0; debut < listePays.length; debut += TAILLE_LOT) {
+    const lot = listePays.slice(debut, debut + TAILLE_LOT);
+    await Promise.all(lot.map(async pays => {
+      const centre = centreDuPays(pays);
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${centre.lat}&lon=${centre.lng}&units=metric&appid=${CONFIG.meteoApiKey}`;
+      try {
+        const reponse = await fetch(url);
+        if (!reponse.ok) return;
+        const meteo = await reponse.json();
+        temperatures[codePays(pays)] = meteo.main.temp;
+      } catch {}
+    }));
+    rafraichirTableau(false);
+    if (debut + TAILLE_LOT < listePays.length) await attente(PAUSE_ENTRE_LOTS);
+  }
+
+  sauvegarderCacheTemperatures();
+  rafraichirTableau(true);
+}
+
+const tableauChaleur = document.getElementById('tableau-chaleur');
+const progressionChaleur = document.getElementById('progression-chaleur');
+const listeChaleur = document.getElementById('liste-chaleur');
+const TAILLE_CLASSEMENT = 8;
+
+function rafraichirTableau(termine) {
+  const classement = listePays
+    .filter(pays => temperatures[codePays(pays)] !== undefined)
+    .sort((a, b) => temperatures[codePays(b)] - temperatures[codePays(a)])
+    .slice(0, TAILLE_CLASSEMENT);
+
+  if (classement.length === 0) return;
+
+  tableauChaleur.classList.remove('cache');
+  progressionChaleur.classList.toggle('cache', termine);
+  if (!termine) {
+    progressionChaleur.textContent = `Analyse : ${Object.keys(temperatures).length}/${listePays.length} pays`;
+  }
+
+  listeChaleur.innerHTML = '';
+  classement.forEach((pays, rang) => {
+    const ligne = document.createElement('li');
+    const bouton = document.createElement('button');
+    const nom = document.createElement('span');
+    nom.textContent = `${rang + 1}. ${nomAffiche(pays)}`;
+    const valeur = document.createElement('span');
+    valeur.className = 'temp-record';
+    valeur.textContent = `${Math.round(temperatures[codePays(pays)])}°C`;
+    bouton.append(nom, valeur);
+    bouton.addEventListener('click', () => selectionnerPays(pays));
+    ligne.appendChild(bouton);
+    listeChaleur.appendChild(ligne);
+  });
+}
 
 let vueDetaillee = false;
 const cacheDetails = {};

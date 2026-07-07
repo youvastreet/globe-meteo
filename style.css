@@ -126,3 +126,69 @@ body {
 .description img {
   width: 50px;
 }
+
+#tableau-chaleur {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 240px;
+  padding: 16px 20px;
+  border: 1px solid #a855f7;
+  border-radius: 12px;
+  background: rgba(20, 8, 40, 0.75);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+  color: #f3e8ff;
+}
+
+#tableau-chaleur.cache,
+#progression-chaleur.cache {
+  display: none;
+}
+
+#tableau-chaleur h3 {
+  margin: 0 0 10px;
+  color: #f0abfc;
+  font-size: 15px;
+}
+
+#progression-chaleur {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+#liste-chaleur {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#liste-chaleur button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 8px;
+  background: rgba(20, 8, 40, 0.85);
+  color: #e9d5ff;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+#liste-chaleur button:hover {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: #f0abfc;
+}
+
+#liste-chaleur .temp-record {
+  color: #fda4af;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+}
